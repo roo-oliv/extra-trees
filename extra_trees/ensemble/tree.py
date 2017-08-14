@@ -81,10 +81,10 @@ def score_c(
         target: numpy.ndarray) -> float:
     mutual_info = mutual_info_score(
         target, attributes[:, feature])  # type: float
-    classif_entropy = entropy(attributes[:, feature])  # type: float
+    classification_entropy = entropy(attributes[:, feature])  # type: float
     split_entropy = entropy(target)  # type: float
 
-    return (2 * mutual_info) / (classif_entropy + split_entropy)
+    return (2 * mutual_info) / (classification_entropy + split_entropy)
 
 
 def stop(

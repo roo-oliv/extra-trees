@@ -1,6 +1,7 @@
 from numbers import Number
 from typing import Any
 
+import pandas
 from sklearn.utils import Bunch
 
 from extra_trees.ensemble.tree import build_extra_tree
@@ -31,8 +32,12 @@ class ExtraTreesModelBase:
     def apply(self, dataset: Bunch):
         results = []
         for row in dataset.data:
-            results.append(
-                sum([tree(row) for tree in self.forest]) / len(self.forest))
+            predictions = [tree(row) for tree in self.forest]
+            if self._type == Number:
+                results.append(sum(predictions) / len(predictions))
+            else:
+                dataframe = pandas.DataFrame(predictions)
+                results.append(dict(dataframe.mean()))
 
         return results
 
