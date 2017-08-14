@@ -7,6 +7,8 @@ from typing import Callable
 from typing import List
 
 import numpy
+from scipy.stats import entropy
+from sklearn.metrics import mutual_info_score
 from sklearn.utils import Bunch
 
 from extra_trees.utils.filter_out_constants import filter_out_constants
@@ -78,7 +80,11 @@ def score_r(
 def score_c(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> float:
-    return 1  # TODO
+    mutual_info = mutual_info_score(target, attributes) # type: float
+    classif_entropy = entropy(attributes)  # type: float
+    split_entropy = entropy(target)  # type: float
+
+    return (2 * mutual_info) / (classif_entropy + split_entropy)
 
 
 def stop(
