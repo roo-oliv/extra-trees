@@ -49,13 +49,13 @@ def split_groups(
 
 
 def score_r(
-        split: Callable[[Any], bool], attributes: List[list],
+        split: Callable[[Any], bool], attribute: list, attributes: List[list],
         target: List[Number]) -> float:
     return 1  # TODO
 
 
 def score_c(
-        split: Callable[[Any], bool], attributes: List[list],
+        split: Callable[[Any], bool], attribute: list, attributes: List[list],
         target: List[Any]) -> float:
     return 1  # TODO
 

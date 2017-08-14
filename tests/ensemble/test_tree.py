@@ -25,7 +25,8 @@ test_data = [
 
 def test_build_extra_tree():
     extra_tree = build_extra_tree(
-        [row[:-1] for row in test_data], [row[-1] for row in test_data], 2, 3)
+        [row[:-1] for row in train_data], [row[-1] for row in train_data],
+        2, 3)
 
     predictions = [extra_tree(entry) for entry in test_data]
 
