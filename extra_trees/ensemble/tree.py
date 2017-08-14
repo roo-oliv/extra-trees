@@ -7,6 +7,7 @@ from typing import Callable
 from typing import List
 
 import numpy
+from sklearn.utils import Bunch
 
 
 def pick_random_split(attribute: list) -> Callable[[Any], bool]:
@@ -32,56 +33,61 @@ def pick_random_split(attribute: list) -> Callable[[Any], bool]:
 
 
 def split_groups(
-        split: Callable[[Any], bool], attribute: list, attributes: List[list],
-        target: list) \
-        -> Tuple[Tuple[List[list], list], Tuple[List[list], list]]:
-    left = ([], [])
-    right = ([], [])
-    for value, row, target_value in attribute, attributes, target:
+        split: Callable[[Any], bool], attributes: List[list], feature: int,
+        target: list) -> Tuple[Bunch, Bunch]:
+    left = Bunch(data=[], target=[])
+    right = Bunch(data=[], target=[])
+    for value, row, target_value in attributes[feature], attributes, target:  # FIXME: Broken use of attributes
         if split(value):
-            left[0].append(copy.deepcopy(row))
-            left[1].append(copy.deepcopy(target_value))
+            left.data.append(copy.deepcopy(row))
+            left.target.append(copy.deepcopy(target_value))
         else:
-            right[0].append(copy.deepcopy(row))
-            right[1].append(copy.deepcopy(target_value))
+            right.data.append(copy.deepcopy(row))
+            right.target.append(copy.deepcopy(target_value))
 
     return left, right
 
 
 def score_r(
-        split: Callable[[Any], bool], attribute: list, attributes: List[list],
+        split: Callable[[Any], bool], attributes: List[list], feature: int,
         target: List[Number]) -> float:
-    left, right = split_groups(split, attribute, attributes, target)
+    left, right = split_groups(split, attributes, target)
 
-    total_var = numpy.var(attribute)
-    l_var = numpy.var(left)
-    r_var = numpy.var(right)
+    total_var = numpy.var(target)  # type: float
+    l_var = numpy.var(left.target)  # type: float
+    r_var = numpy.var(right.target)  # type: float
 
-    l_proportion = len(left) / attribute # FIXME attributes?
-    r_proportion = len(right) / attribute
+    l_proportion = len(left.target) / len(attribute)  # FIXME attributes?
+    r_proportion = len(right.target) / len(attribute)
 
-    return (total_var - l_proportion * l_var - r_proportion * r_var) / total_var
+    return (
+        (total_var - l_proportion * l_var - r_proportion * r_var) / total_var)
+
 
 def score_c(
-        split: Callable[[Any], bool], attribute: list, attributes: List[list],
+        split: Callable[[Any], bool], attributes: List[list], feature: int,
         target: List[Any]) -> float:
     return 1  # TODO
 
 
 def stop(
-        features: List[list], target: list, min_size: int) -> bool:
-    if len(features) < min_size:
+        attributes: List[list], features: List[list], target: list,
+        min_size: int) -> bool:
+    if len(attributes) < min_size:
         return True
-    if all(x.count(x[0]) == len(x) for x in features):
+    if all(numpy.unique(x).size == 1 for x in features):
         return True
-    if target.count(target[0]) == len(target):
+    if numpy.unique(target).size == 1:
         return True
     return False
 
 
 def build_extra_tree(
-        attributes: List[list], target: list, n_features: int, min_size: int,
+        train: Bunch, n_features: int, min_size: int,
         excluded: List[bool] = None, _type: type = None):
+    attributes = train.data
+    target = train.target
+
     if excluded is None:
         excluded = [False] * len(attributes)
     if _type is None:
@@ -97,7 +103,7 @@ def build_extra_tree(
     for feature in sample:
         excluded[feature] = True
 
-    if stop(features, target, min_size):
+    if stop(attributes, features, target, min_size):
         def predict(data):
             if _type is Number:
                 return sum(target) / float(len(target))
@@ -108,13 +114,16 @@ def build_extra_tree(
 
     splits = [pick_random_split(attribute) for attribute in features]
     score = score_r if _type is Number else score_c
-    scores = [score(split, features, target) for split in splits]
+    scores = [
+        score(split, attributes, feature, target)
+        for split, feature in zip(splits, features)
+    ]
     best = numpy.argmax(scores)
     split = splits[best]
     attribute = features[best]
     attribute_index = candidates[best]
 
-    left, right = split_groups(split, attribute, attributes, target)
+    left, right = split_groups(split, attribute, target, attributes)
     left_branch = build_extra_tree(
         *left, n_features, min_size, excluded, _type)
     right_branch = build_extra_tree(
