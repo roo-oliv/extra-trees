@@ -90,10 +90,13 @@ def build_extra_tree(
         excluded[feature] = True
 
     if stop(features, target, min_size):
-        if _type is Number:
-            return sum(target) / float(len(target))
-        else:
-            return collections.Counter(target)
+        def predict(data):
+            if _type is Number:
+                return sum(target) / float(len(target))
+            else:
+                return collections.Counter(target)
+
+        return predict
 
     splits = [pick_random_split(attribute) for attribute in features]
     score = score_r if _type is Number else score_c
