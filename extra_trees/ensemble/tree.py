@@ -51,8 +51,16 @@ def split_groups(
 def score_r(
         split: Callable[[Any], bool], attribute: list, attributes: List[list],
         target: List[Number]) -> float:
-    return 1  # TODO
+    left, right = split_groups(split, attribute, attributes, target)
 
+    total_var = numpy.var(attribute)
+    l_var = numpy.var(left)
+    r_var = numpy.var(right)
+
+    l_proportion = len(left) / attribute # FIXME attributes?
+    r_proportion = len(right) / attribute
+
+    return (total_var - l_proportion * l_var - r_proportion * r_var) / total_var
 
 def score_c(
         split: Callable[[Any], bool], attribute: list, attributes: List[list],
