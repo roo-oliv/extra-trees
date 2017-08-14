@@ -16,7 +16,7 @@ def test_extra_tree_regressor():
     test = Bunch(
         data=breast_cancer_dataset.data[indices[-10:]],
         target=breast_cancer_dataset.target[indices[-10:]])
-    model = ExtraTreesRegressor(10, 2, 4)
+    model = ExtraTreesRegressor(10, 3, 4)
 
     print("\nTRAINING")
 

@@ -1,5 +1,4 @@
 import collections
-import copy
 import random
 from numbers import Number
 from typing import Any, Tuple
@@ -18,7 +17,7 @@ def pick_random_split(attribute: list) -> Callable[[Any], bool]:
     if isinstance(attribute[0], Number):
         min_value = min(attribute)
         max_value = max(attribute)
-        pivot = random.uniform(min_value, max_value)
+        pivot = random.uniform(min_value+0.0000001, max_value-0.0000001)
 
         def test(x: Number) -> bool:
             return x < pivot
@@ -121,7 +120,7 @@ def build_extra_tree(
         for feature in sample:
             excluded[feature] = True
 
-        features = filter_out_constants(features)
+        features = filter_out_constants(features, sample)
     else:
         features = numpy.ndarray([0])
 
@@ -147,10 +146,9 @@ def build_extra_tree(
         score(split, attributes, feature, target)
         for split, feature in zip(splits, sample)
     ]
-    best = numpy.argmax(scores)
+    best = numpy.argmax(scores)  # type: int
     split = splits[best]
-    attribute = features[best]
-    attribute_index = candidates[best]
+    attribute_index = sample[best]
 
     left, right = split_groups(split, attributes, attribute_index, target)
     left_branch = build_extra_tree(
