@@ -7,17 +7,27 @@ from sklearn import datasets
 
 def test_build_extra_tree():
     numpy.random.seed(0)
-    iris_dataset = datasets.load_iris()
-    indices = numpy.random.permutation(len(iris_dataset.data))
+    breast_cancer_dataset = datasets.load_breast_cancer()
+    indices = numpy.random.permutation(len(breast_cancer_dataset.data))
     train = Bunch(
-        data=iris_dataset.data[indices[:-10]],
-        target=iris_dataset.target[indices[:-10]])
+        data=breast_cancer_dataset.data[indices[:-10]],
+        target=breast_cancer_dataset.target[indices[:-10]])
     test = Bunch(
-        data=iris_dataset.data[indices[-10:]],
-        target=iris_dataset.target[indices[-10:]])
+        data=breast_cancer_dataset.data[indices[-10:]],
+        target=breast_cancer_dataset.target[indices[-10:]])
+
+    print("\nTRAINING")
+
     extra_tree = build_extra_tree(train, 2, 3)
 
+    print("\nTESTING")
+
     predictions = [extra_tree(entry) for entry in test.data]
+
+    print("\nRESULTS:")
+    print("PREDICTIONS:", end=' ')
     print(predictions)
-    
+    print("ACTUAL VALUES:", end=' ')
+    print(test.target)
+
     assert len(predictions) == len(test.target)  # TODO: real test
