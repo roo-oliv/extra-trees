@@ -79,8 +79,9 @@ def score_r(
 def score_c(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> float:
-    mutual_info = mutual_info_score(target, attributes)  # type: float
-    classif_entropy = entropy(attributes)  # type: float
+    mutual_info = mutual_info_score(
+        target, attributes[:, feature])  # type: float
+    classif_entropy = entropy(attributes[:, feature])  # type: float
     split_entropy = entropy(target)  # type: float
 
     return (2 * mutual_info) / (classif_entropy + split_entropy)
