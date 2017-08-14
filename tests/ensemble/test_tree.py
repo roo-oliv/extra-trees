@@ -18,6 +18,6 @@ def test_build_extra_tree():
     extra_tree = build_extra_tree(train, 2, 3)
 
     predictions = [extra_tree(entry) for entry in test.data]
-
     print(predictions)
+    
     assert len(predictions) == len(test.target)  # TODO: real test

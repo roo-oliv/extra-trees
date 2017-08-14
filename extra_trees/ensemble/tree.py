@@ -21,6 +21,7 @@ def pick_random_split(attribute: list) -> Callable[[Any], bool]:
         def test(x: Number) -> bool:
             return x < pivot
 
+        test.decision = pivot
         test._type = Number
     else:
         values = set(attribute)
@@ -29,6 +30,7 @@ def pick_random_split(attribute: list) -> Callable[[Any], bool]:
         def test(x: Any) -> bool:
             return x in sample
 
+        test.decision = sample
         test._type = Any
 
     return test
@@ -118,11 +120,15 @@ def build_extra_tree(
         features = numpy.ndarray([0])
 
     if stop(attributes, features, target, min_size):
-        def predict(data):
+        def predict(data: List[list], show_decisions: bool = False):
+            if show_decisions:
+                print("LEAF REACHED")
             if _type is Number:
                 return sum(target) / float(len(target))
             else:
                 return collections.Counter(target)
+
+        predict.decision = None
 
         return predict
 
@@ -146,10 +152,15 @@ def build_extra_tree(
     right_branch = build_extra_tree(
         right, n_features, min_size, excluded, _type)
 
-    def predict(data: List[list]):
+    def predict(data: List[list], show_decisions: bool = False):
+        if show_decisions:
+            print(split.decision)
         if split(data[attribute_index]):
-            return left_branch(data)
+            return left_branch(data, show_decisions)
         else:
-            return right_branch(data)
+            return right_branch(data, show_decisions)
+
+    predict.feature = attribute_index
+    predict.decision = split.decision
 
     return predict
