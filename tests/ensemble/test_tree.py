@@ -1,7 +1,7 @@
 import numpy
 from sklearn.utils import Bunch
 
-from extra_trees.ensemble.tree import build_extra_tree
+from extratrees.ensemble.tree import build_extra_tree
 from sklearn import datasets
 
 

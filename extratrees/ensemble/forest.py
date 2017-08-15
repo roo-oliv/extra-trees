@@ -4,7 +4,7 @@ from typing import Any
 import pandas
 from sklearn.utils import Bunch
 
-from extra_trees.ensemble.tree import build_extra_tree
+from extratrees.ensemble.tree import build_extra_tree
 
 
 class ExtraTreesModelBase:

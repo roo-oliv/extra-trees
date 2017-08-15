@@ -3,7 +3,7 @@ from sklearn import datasets
 import numpy
 from sklearn.utils import Bunch
 
-from extra_trees.ensemble.forest import ExtraTreesRegressor, \
+from extratrees.ensemble.forest import ExtraTreesRegressor, \
     ExtraTreesClassifier
 
 

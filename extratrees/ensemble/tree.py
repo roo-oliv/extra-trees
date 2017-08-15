@@ -10,7 +10,7 @@ from scipy.stats import entropy
 from sklearn.metrics import mutual_info_score
 from sklearn.utils import Bunch
 
-from extra_trees.utils.filter_out_constants import filter_out_constants
+from extratrees.utils.filter_out_constants import filter_out_constants
 
 
 def pick_random_split(attribute: list) -> Callable[[Any], bool]:
