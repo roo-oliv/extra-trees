@@ -126,7 +126,7 @@ def build_extra_tree(
 
         features = filter_out_constants(features, sample)
     else:
-        features = numpy.ndarray([0])
+        features = numpy.asarray([])
 
     if stop(attributes, features, target, min_size):
         def predict(data: List[list], show_decisions: bool = False):

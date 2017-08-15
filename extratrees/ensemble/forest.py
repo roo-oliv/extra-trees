@@ -1,6 +1,8 @@
+from collections import Counter
 from numbers import Number
 from typing import Any
 
+import numpy
 import pandas
 from sklearn.utils import Bunch
 
@@ -22,12 +24,18 @@ class ExtraTreesModelBase:
         else:
             self._type = None
 
+    @property
+    def estimators_(self):
+        return self.forest
+
     def fit(self, train: Bunch):
         self.forest = [
             build_extra_tree(
                 train, self.n_features, self.min_size, _type=self._type)
             for _ in range(self.n_estimators)
         ]
+
+        return self
 
     def apply(self, dataset: Bunch):
         results = []
@@ -36,10 +44,17 @@ class ExtraTreesModelBase:
             if self._type == Number:
                 results.append(sum(predictions) / len(predictions))
             else:
-                dataframe = pandas.DataFrame(predictions)
-                results.append(dict(dataframe.mean()))
+                s = Counter({})
+                for prediction in predictions:
+                    s += prediction
+                results.append(s)
 
         return results
+
+    def predict(self, x):
+        return numpy.asarray(
+            [max(p, key=p.get) for p in self.apply(Bunch(data=x))],
+            dtype=numpy.int)
 
 
 class ExtraTreesRegressor(ExtraTreesModelBase):
