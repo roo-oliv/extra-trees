@@ -8,7 +8,9 @@ from typing import List
 import numpy
 from scipy.stats import entropy
 from sklearn.metrics import mutual_info_score
-from sklearn.utils import Bunch
+from sklearn.tree._tree import issparse
+from sklearn.tree.tree import BaseDecisionTree, DTYPE
+from sklearn.utils import Bunch, check_array
 
 from extratrees.utils.filter_out_constants import filter_out_constants
 
@@ -93,7 +95,7 @@ def score_c(
 def stop(
         attributes: numpy.ndarray, features: numpy.ndarray,
         target: numpy.ndarray, min_size: int) -> bool:
-    if attributes.shape[1] < min_size:
+    if attributes.shape[0] < min_size:
         return True
     if len(features) == 0:
         return True
@@ -103,15 +105,35 @@ def stop(
 
 
 def build_extra_tree(
-        train: Bunch, n_features: int, min_size: int,
-        excluded: List[bool] = None, _type: type = None):
-    attributes = train.data
-    target = train.target
-
+        attributes: numpy.ndarray, target: numpy.ndarray, min_size: int,
+        n_features: int = None, excluded: List[bool] = None,
+        _type: type = None):
+    dynamic_n_features = False
+    if n_features is None:
+        dynamic_n_features = True
+        n_features = int(numpy.sqrt(attributes.size))
     if excluded is None:
         excluded = [False] * attributes.shape[1]
     if _type is None:
         _type = Number if isinstance(target[0], Number) else Any
+
+    def validate_X_predict(X, check_input):
+        if check_input:
+            X = check_array(X, dtype=DTYPE, accept_sparse="csr")
+            if (issparse(X)
+                and (X.indices.dtype != numpy.intc
+                     or X.indptr.dtype != numpy.intc)):
+                raise ValueError(
+                    "No support for np.int64 index based sparse matrices")
+
+        X_n_features = X.shape[1]
+        if attributes.shape[1] != X_n_features:
+            raise ValueError("Number of features of the model must "
+                             "match the input. Model n_features is %s and "
+                             "input n_features is %s "
+                             % (attributes.shape[1], X_n_features))
+
+        return X
 
     candidates = []
     for i in range(len(excluded)):
@@ -138,6 +160,7 @@ def build_extra_tree(
                 return collections.Counter(target)
 
         predict.decision = None
+        predict._validate_X_predict = validate_X_predict
 
         return predict
 
@@ -156,9 +179,11 @@ def build_extra_tree(
 
     left, right = split_groups(split, attributes, attribute_index, target)
     left_branch = build_extra_tree(
-        left, n_features, min_size, excluded, _type)
+        left.data, left.target, min_size,
+        n_features if not dynamic_n_features else None, excluded, _type)
     right_branch = build_extra_tree(
-        right, n_features, min_size, excluded, _type)
+        right.data, right.target, min_size,
+        n_features if not dynamic_n_features else None, excluded, _type)
 
     def predict(data: List[list], show_decisions: bool = False):
         if show_decisions:
@@ -170,5 +195,6 @@ def build_extra_tree(
 
     predict.feature = attribute_index
     predict.decision = split.decision
+    predict._validate_X_predict = validate_X_predict
 
     return predict

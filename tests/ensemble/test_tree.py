@@ -18,7 +18,7 @@ def test_build_extra_tree():
 
     print("\nTRAINING")
 
-    extra_tree = build_extra_tree(train, 2, 3)
+    extra_tree = build_extra_tree(train.data, train.target, 3, 2)
 
     print("\nTESTING")
 

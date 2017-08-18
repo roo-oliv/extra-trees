@@ -1,110 +1,124 @@
+from extratrees.ensemble.forest import ExtraTreesClassifier
+
+print(__doc__)
+
+
+# Original code by Gaël Varoquaux and Andreas Müller
+# Adapted for Data Mining class project by Rodrigo Oliveira
+# License: BSD 3 clause
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-
-from sklearn.datasets import load_iris
-from sklearn.datasets import load_wine
-from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import make_moons, make_circles, make_classification
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
-from extratrees.ensemble.forest import ExtraTreesClassifier
+h = .02  # step size in the mesh
 
-n_classes = 3
-n_estimators = 30
-cmap = plt.cm.RdYlBu
-plot_step = 0.02  # Superficie de Contorno
-plot_step_coarser = 0.5  # Largura do Passo
-RANDOM_SEED = 13  # Seed em cada iteracao
+names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
+         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
+         "Naive Bayes", "QDA", "Extremely Randomized Trees"]
 
-iris_dataset = load_iris()
-wine_dataset = load_wine()
-breast_cancer_dataset = load_breast_cancer()
-datasets = {
-    "iris": iris_dataset,
-    "wine": wine_dataset,
-    "breast_cancer": breast_cancer_dataset
-}
+classifiers = [
+    KNeighborsClassifier(3),
+    SVC(kernel="linear", C=0.025),
+    SVC(gamma=2, C=1),
+    GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
+    DecisionTreeClassifier(),
+    RandomForestClassifier(n_estimators=100, max_features=1),
+    MLPClassifier(alpha=1),
+    AdaBoostClassifier(),
+    GaussianNB(),
+    QuadraticDiscriminantAnalysis(),
+    ExtraTreesClassifier(n_estimators=100, min_size=2)]
 
-plot_idx = 1
-dataset_count = 0
-models = [
-    DecisionTreeClassifier(max_depth=None),
-    ExtraTreesClassifier(n_estimators, 3, 4)
-]
-for dataset_name, dataset in datasets.items():
-    dataset_count += 1
-    for model in models:
-        X = dataset.data
-        y = dataset.target
+X, y = make_classification(n_features=2, n_redundant=0, n_informative=2,
+                           random_state=1, n_clusters_per_class=1)
+rng = np.random.RandomState(2)
+X += 2 * rng.uniform(size=X.shape)
+linearly_separable = (X, y)
 
-        # randomize
-        idx = np.arange(X.shape[0])
-        np.random.seed(RANDOM_SEED)
-        np.random.shuffle(idx)
-        X = X[idx]
-        y = y[idx]
+datasets = [make_moons(noise=0.3, random_state=0),
+            make_circles(noise=0.2, factor=0.5, random_state=1),
+            linearly_separable
+            ]
 
-        # normalize
-        mean = X.mean(axis=0)
-        std = X.std(axis=0)
-        X = (X - mean) / std
+figure = plt.figure(figsize=(27, 9))
+i = 1
+# iterate over datasets
+for ds_cnt, ds in enumerate(datasets):
+    # preprocess dataset, split into training and test part
+    X, y = ds
+    X = StandardScaler().fit_transform(X)
+    X_train, X_test, y_train, y_test = \
+        train_test_split(X, y, test_size=.4, random_state=42)
 
-        # train
-        clf = model.fit(X, y)
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
 
-        scores = clf.score(X, y)
+    # just plot the dataset first
+    cm = plt.cm.RdBu
+    cm_bright = ListedColormap(['#FF0000', '#0000FF'])
+    ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
+    if ds_cnt == 0:
+        ax.set_title("Input data")
+    # Plot the training points
+    ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
+               edgecolors='k')
+    # and testing points
+    ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright, alpha=0.6,
+               edgecolors='k')
+    ax.set_xlim(xx.min(), xx.max())
+    ax.set_ylim(yy.min(), yy.max())
+    ax.set_xticks(())
+    ax.set_yticks(())
+    i += 1
 
-        model_title = str(type(model)).split(".")[-1][:-2][:-len("Classifier")]
+    # iterate over classifiers
+    for name, clf in zip(names, classifiers):
+        ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
+        clf.fit(X_train, y_train)
+        score = clf.score(X_test, y_test)
 
-        model_details = model_title
-        if hasattr(model, "estimators_"):
-            model_details += " with {} estimators".format(
-                len(model.estimators_))
-
-        print(
-            model_details + " for " + dataset_name
-            + " with all features has a score of", scores)
-
-        plt.subplot(5, 3, plot_idx)
-        if plot_idx <= 5*dataset_count:
-            plt.title(dataset_name)
-
-        # decision limit
-        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-        xx, yy = np.meshgrid(
-            np.arange(x_min, x_max, plot_step),
-            np.arange(y_min, y_max, plot_step))
-
-        # plot contour
-        if isinstance(model, DecisionTreeClassifier):
-            Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-            Z = Z.reshape(xx.shape)
-            cs = plt.contourf(xx, yy, Z, cmap=cmap)
+        # Plot the decision boundary. For that, we will assign a color to each
+        # point in the mesh [x_min, x_max]x[y_min, y_max].
+        if hasattr(clf, "decision_function"):
+            Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
         else:
-            estimator_alpha = 1.0 / len(model.estimators_)
-            for tree in model.estimators_:
-                Z = tree.predict(np.c_[xx.ravel(), yy.ravel()])
-                Z = Z.reshape(xx.shape)
-                cs = plt.contourf(xx, yy, Z, alpha=estimator_alpha, cmap=cmap)
+            Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
 
-        xx_coarser, yy_coarser = np.meshgrid(
-            np.arange(x_min, x_max, plot_step_coarser),
-            np.arange(y_min, y_max, plot_step_coarser))
-        Z_points_coarser = model.predict(
-            np.c_[xx_coarser.ravel(), yy_coarser.ravel()]
-        ).reshape(xx_coarser.shape)
-        cs_points = plt.scatter(
-            xx_coarser, yy_coarser, s=15, c=Z_points_coarser, cmap=cmap,
-            edgecolors="none")
+        # Put the result into a color plot
+        Z = Z.reshape(xx.shape)
+        ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
 
-        # plot training points
-        plt.scatter(
-            X[:, 0], X[:, 1], c=y, cmap=ListedColormap(['r', 'y', 'b']),
-            edgecolor='k', s=20)
-        plot_idx += 1
+        # Plot also the training points
+        ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright,
+                   edgecolors='k')
+        # and testing points
+        ax.scatter(X_test[:, 0], X_test[:, 1], c=y_test, cmap=cm_bright,
+                   edgecolors='k', alpha=0.6)
 
-plt.suptitle("Classifiers on feature subsets")
+        ax.set_xlim(xx.min(), xx.max())
+        ax.set_ylim(yy.min(), yy.max())
+        ax.set_xticks(())
+        ax.set_yticks(())
+        if ds_cnt == 0:
+            ax.set_title(name)
+        ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'),
+                size=15, horizontalalignment='right')
+        i += 1
+
 plt.tight_layout()
-
 plt.show()
