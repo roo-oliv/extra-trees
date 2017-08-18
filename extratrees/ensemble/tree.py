@@ -13,12 +13,12 @@ from sklearn.utils import Bunch
 from extratrees.utils.filter_out_constants import filter_out_constants
 
 
-def pick_random_split(attribute: list) -> Callable[[Any], bool]:
+def pick_random_split(attribute: list, _type) -> Callable[[Any], bool]:
     """Randomly chooses a pivot point (for regression cases) or
     a subset (for classification cases) in order to return a
     callable function for splitting the data.
     """
-    if isinstance(attribute[0], Number):
+    if _type is Number:
         min_value = min(attribute)
         max_value = max(attribute)
         pivot = random.uniform(min_value+0.0000001, max_value-0.0000001)
@@ -168,7 +168,7 @@ def build_extra_tree(
         return predict
 
     splits = [
-        pick_random_split(attribute)
+        pick_random_split(attribute, _type)
         for attribute in numpy.transpose(features, (1, 0))
     ]
     score = score_r if _type is Number else score_c
