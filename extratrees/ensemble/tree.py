@@ -157,7 +157,7 @@ def build_extra_tree(
             if _type is Number:
                 return sum(target) / float(len(target))
             else:
-                return collections.Counter(target)
+                return collections.Counter(target.flat)
 
         predict.decision = None
         predict._validate_X_predict = validate_X_predict

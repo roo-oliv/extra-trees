@@ -20,6 +20,7 @@ class ExtraTreesModelBase:
         self.forest = list()
         self.n_jobs = n_jobs
         self.class_weight = None
+        self.verbose = False
         if numeric is not None:
             self._type = Number if numeric else Any
         else:
@@ -57,6 +58,14 @@ class ExtraTreesModelBase:
             [max(p, key=p.get) for p in self.apply(Bunch(data=x))],
             dtype=numpy.int)
 
+    def predict_proba(self, x):
+        p = self.apply(Bunch(data=x))
+        proba = []
+        for r in p:
+            total = sum(r.values())
+            proba.append([v/total for v in r.values()])
+        return numpy.asarray(proba, dtype=numpy.float64)
+
 
 class ExtraTreesRegressor(ExtraTreesModelBase, ForestRegressor):
     def __init__(
@@ -70,6 +79,29 @@ class ExtraTreesClassifier(ExtraTreesModelBase, ForestClassifier):
         super().__init__(n_estimators, min_size, n_features, False)
 
     def fit(self, x, y, sample_weight=None):
-        self.n_outputs_ = len(y)
+        y = numpy.atleast_1d(y)
+
+        if y.ndim == 1:
+            # reshape is necessary to preserve the data contiguity against vs
+            # [:, np.newaxis] that does not.
+            y = numpy.reshape(y, (-1, 1))
+
+        self.n_outputs_ = y.shape[1]
+
         y, expanded_class_weight = self._validate_y_class_weight(y)
         return super().fit(x, y, sample_weight)
+
+    def predict_proba(self, x):
+        results = []
+        for row in x:
+            predictions = [tree(row) for tree in self.forest]
+            s = Counter({})
+            for prediction in predictions:
+                total = sum(prediction.values())
+                s += {
+                    k: v / (total * self.n_estimators)
+                    for k, v in prediction.items()
+                }
+            results.append(list(s.values()))
+
+        return numpy.asarray(results)

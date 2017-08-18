@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.datasets import make_moons, make_circles, make_classification
+from sklearn.datasets import make_moons, make_circles, make_classification, load_breast_cancer
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -42,16 +42,19 @@ classifiers = [
     QuadraticDiscriminantAnalysis(),
     ExtraTreesClassifier(n_estimators=100, min_size=2)]
 
-X, y = make_classification(n_features=2, n_redundant=0, n_informative=2,
+X, y = make_classification(n_features=20, n_redundant=0, n_informative=2,
                            random_state=1, n_clusters_per_class=1)
 rng = np.random.RandomState(2)
 X += 2 * rng.uniform(size=X.shape)
 linearly_separable = (X, y)
 
-datasets = [make_moons(noise=0.3, random_state=0),
-            make_circles(noise=0.2, factor=0.5, random_state=1),
-            linearly_separable
-            ]
+bunch = load_breast_cancer()
+breast_cancer = bunch.data, bunch.target
+m = make_moons(noise=0.3, random_state=0)
+
+datasets = [
+    linearly_separable,
+]
 
 figure = plt.figure(figsize=(27, 9))
 i = 1
