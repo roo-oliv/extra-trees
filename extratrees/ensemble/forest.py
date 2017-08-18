@@ -29,6 +29,8 @@ class ExtraTreesModelBase:
         return self.forest
 
     def fit(self, train: Bunch):
+        """Pick a train collection in order to build the tree
+        """
         self.forest = [
             build_extra_tree(
                 train, self.n_features, self.min_size, _type=self._type)
@@ -38,6 +40,10 @@ class ExtraTreesModelBase:
         return self
 
     def apply(self, dataset: Bunch):
+        """Apply the generated tree into a given dataset
+        return its predictions from what has been used for
+        training
+        """
         results = []
         for row in dataset.data:
             predictions = [tree(row) for tree in self.forest]

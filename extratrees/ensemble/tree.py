@@ -14,6 +14,10 @@ from extratrees.utils.filter_out_constants import filter_out_constants
 
 
 def pick_random_split(attribute: list) -> Callable[[Any], bool]:
+    """Randomly chooses a pivot point (for regression cases) or
+    a subset (for classification cases) in order to return a
+    callable function for splitting the data.
+    """
     if isinstance(attribute[0], Number):
         min_value = min(attribute)
         max_value = max(attribute)
@@ -40,6 +44,9 @@ def pick_random_split(attribute: list) -> Callable[[Any], bool]:
 def split_groups(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> Tuple[Bunch, Bunch]:
+    """Split the data in the node using the callable argument 'split'
+    in the left and right branches, returning them thereafter.
+    """
     left_indexes = []
     right_indexes = []
     for row, i, target_value in zip(
@@ -63,6 +70,9 @@ def split_groups(
 def score_r(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> float:
+    """Calculates the score of regressions cases using a mathematical
+    expression based on the variance of the original node and its two branches
+    """
     left, right = split_groups(split, attributes, feature, target)
 
     total_var = numpy.var(target)  # type: float
@@ -79,6 +89,8 @@ def score_r(
 def score_c(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> float:
+    """WIP: Calculates the score of classification cases using entropy and
+    informational gain"""
     return score_r(split, attributes, feature, target)
     left, right = split_groups(split, attributes, feature, target)
     split_entropy = (entropy(left.target) + entropy(right.target)) / 2
