@@ -1,89 +1,49 @@
-from extratrees.ensemble.forest import ExtraTreesRegressor
-
 print(__doc__)
 
-# Authors: Jan Hendrik Metzen <jhm@informatik.uni-bremen.de>
+
+# Code source: Gaël Varoquaux
+# Modified for documentation by Jaques Grobler
 # License: BSD 3 clause
 
 
-import time
-
 import numpy as np
-
 import matplotlib.pyplot as plt
 
-from sklearn.kernel_ridge import KernelRidge
+from sklearn import linear_model, decomposition, datasets
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import WhiteKernel, ExpSineSquared
 
-rng = np.random.RandomState(0)
+logistic = linear_model.LogisticRegression()
 
-# Generate sample data
-X = 15 * rng.rand(100, 1)
-y = np.sin(X).ravel()
-y += 3 * (0.5 - rng.rand(X.shape[0]))  # add noise
+pca = decomposition.PCA()
+pipe = Pipeline(steps=[('pca', pca), ('logistic', logistic)])
 
-# Fit KernelRidge with parameter selection based on 5-fold cross validation
-param_grid = {"alpha": [1e0, 1e-1, 1e-2, 1e-3],
-              "kernel": [ExpSineSquared(l, p)
-                         for l in np.logspace(-2, 2, 10)
-                         for p in np.logspace(0, 2, 10)]}
-kr = GridSearchCV(KernelRidge(), cv=5, param_grid=param_grid)
-stime = time.time()
-kr.fit(X, y)
-print("Time for KRR fitting: %.3f" % (time.time() - stime))
+digits = datasets.load_digits()
+X_digits = digits.data
+y_digits = digits.target
 
-gp_kernel = ExpSineSquared(1.0, 5.0, periodicity_bounds=(1e-2, 1e1)) \
-    + WhiteKernel(1e-1)
-gpr = GaussianProcessRegressor(kernel=gp_kernel)
-stime = time.time()
-gpr.fit(X, y)
-print("Time for GPR fitting: %.3f" % (time.time() - stime))
+# Plot the PCA spectrum
+pca.fit(X_digits)
 
-ext = ExtraTreesRegressor(n_estimators=100, min_size=2)
-stime = time.time()
-ext.fit(X, y)
-print("Time for EXT fitting: %.3f" % (time.time() - stime))
+plt.figure(1, figsize=(4, 3))
+plt.clf()
+plt.axes([.2, .2, .7, .7])
+plt.plot(pca.explained_variance_, linewidth=2)
+plt.axis('tight')
+plt.xlabel('n_components')
+plt.ylabel('explained_variance_')
 
-# Predict using kernel ridge
-X_plot = np.linspace(0, 20, 10000)[:, None]
-stime = time.time()
-y_kr = kr.predict(X_plot)
-print("Time for KRR prediction: %.3f" % (time.time() - stime))
+# Prediction
+n_components = [20, 40, 64]
+Cs = np.logspace(-4, 4, 3)
 
-# Predict using gaussian process regressor
-stime = time.time()
-y_gpr = gpr.predict(X_plot, return_std=False)
-print("Time for GPR prediction: %.3f" % (time.time() - stime))
+# Parameters of pipelines can be set using ‘__’ separated parameter names:
+estimator = GridSearchCV(pipe,
+                         dict(pca__n_components=n_components,
+                              logistic__C=Cs))
+estimator.fit(X_digits, y_digits)
 
-stime = time.time()
-y_gpr, y_std = gpr.predict(X_plot, return_std=True)
-print("Time for GPR prediction with standard-deviation: %.3f"
-      % (time.time() - stime))
-
-# Predict using extremely randomized trees regressor
-y_ext = ext.predict(X_plot)
-print("Time for EXT prediction: %.3f" % (time.time() - stime))
-
-# Plot results
-plt.figure(figsize=(10, 5))
-lw = 2
-plt.scatter(X, y, c='k', label='data')
-plt.plot(X_plot, np.sin(X_plot), color='navy', lw=lw, label='True')
-plt.plot(X_plot, y_kr, color='turquoise', lw=lw,
-         label='KRR (%s)' % kr.best_params_)
-plt.plot(X_plot, y_gpr, color='darkorange', lw=lw,
-         label='GPR (%s)' % gpr.kernel_)
-plt.fill_between(X_plot[:, 0], y_gpr - y_std, y_gpr + y_std, color='darkorange',
-                 alpha=0.2)
-plt.plot(X_plot, y_ext, color='green', lw=lw,
-         label='EXT (%s)' % kr.best_params_)
-
-plt.xlabel('data')
-plt.ylabel('target')
-plt.xlim(0, 20)
-plt.ylim(-4, 4)
-plt.title('GPR versus Kernel Ridge vs Extremely Randomized Trees')
-plt.legend(loc="best",  scatterpoints=1, prop={'size': 8})
+plt.axvline(estimator.best_estimator_.named_steps['pca'].n_components,
+            linestyle=':', label='n_components chosen')
+plt.legend(prop=dict(size=12))
 plt.show()

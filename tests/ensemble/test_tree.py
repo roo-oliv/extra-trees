@@ -7,7 +7,7 @@ from sklearn import datasets
 
 def test_build_extra_tree():
     numpy.random.seed(0)
-    breast_cancer_dataset = datasets.load_breast_cancer()
+    breast_cancer_dataset = datasets.load_boston()
     indices = numpy.random.permutation(len(breast_cancer_dataset.data))
     train = Bunch(
         data=breast_cancer_dataset.data[indices[:-10]],
@@ -23,6 +23,23 @@ def test_build_extra_tree():
     print("\nTESTING")
 
     predictions = [extra_tree(entry) for entry in test.data]
+
+    for j in range(0):
+        extra_tree = build_extra_tree(train.data, train.target, 3, 2)
+
+        _predictions = [extra_tree(entry) + p for entry, p in zip(test.data, predictions)]
+        predictions = _predictions
+
+    _predictions = [p/1 for p in predictions]
+
+    c = [round(e) for e in _predictions]
+
+    errors = 0
+    for i in range(len(c)):
+        if c[i] != test.target[i]:
+            errors += 1
+
+    print('ERROR PERCENTAGE: {}'.format(errors/len(c)))
 
     print("\nRESULTS:")
     print("PREDICTIONS:", end=' ')
