@@ -89,17 +89,31 @@ def score_r(
 def score_c(
         split: Callable[[Any], bool], attributes: numpy.ndarray, feature: int,
         target: numpy.ndarray) -> float:
-    """WIP: Calculates the score of classification cases using entropy and
+    """Calculates the score of classification cases using entropy and
     informational gain"""
-    return score_r(split, attributes, feature, target)
     left, right = split_groups(split, attributes, feature, target)
-    split_entropy = (entropy(left.target) + entropy(right.target)) / 2
-    mutual_info = mutual_info_score(
-        target, attributes[:, feature])  # type: float
-    classification_entropy = entropy(attributes[:, feature])  # type: float
-    split_entropy = entropy(target)  # type: float
 
-    return (2 * mutual_info) / (classification_entropy + split_entropy)
+    # Get the counts of zeroes and ones e get entropy
+    # Assumes two classes of 0s and 1s
+    ones = numpy.sum(target)
+    zeroes = numpy.sum(1 - target)
+
+    classification_entropy = entropy([ones/len(target),
+                                      zeroes/len(target)],
+                                     base=2)
+    split_entropy = entropy([len(left.target)/len(target),
+                             len(right.target)/len(target)],
+                            base=2)
+
+    join_entropy = entropy([ones/len(target) * len(left.target)/len(target),
+                            ones/len(target) * len(right.target)/len(target),
+                            zeroes/len(target) * len(left.target)/len(target),
+                            zeroes/len(target) * len(right.target)/len(target)],
+                           base=2)
+
+    mutual_split_info = classification_entropy + split_entropy - join_entropy
+
+    return (2 * mutual_split_info) / (classification_entropy + split_entropy)
 
 
 def stop(
