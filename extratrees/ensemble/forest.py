@@ -12,13 +12,14 @@ from extratrees.ensemble.tree import build_extra_tree
 class ExtraTreesModelBase:
     def __init__(
             self, n_estimators: int, n_features: int, min_size: int,
-            numeric: bool = None):
+            numeric: bool = None, verbose: bool = None):
         if n_features > min_size:
             raise ValueError("n_features cannot be greater than min_size")
         self.n_estimators = n_estimators
         self.n_features = n_features
         self.min_size = min_size
         self.forest = list()
+        self.verbose = False or verbose
         if numeric is not None:
             self._type = Number if numeric else Any
         else:
@@ -46,7 +47,7 @@ class ExtraTreesModelBase:
         """
         results = []
         for row in dataset.data:
-            predictions = [tree(row) for tree in self.forest]
+            predictions = [tree(row, self.verbose) for tree in self.forest]
             if self._type == Number:
                 results.append(sum(predictions) / len(predictions))
             else:
@@ -64,8 +65,13 @@ class ExtraTreesModelBase:
 
 
 class ExtraTreesRegressor(ExtraTreesModelBase):
-    def __init__(self, n_estimators: int, n_features: int, min_size: int):
-        super().__init__(n_estimators, n_features, min_size, True)
+    def __init__(
+            self, n_estimators: int, n_features: int, min_size: int,
+            verbose: bool = None):
+        super().__init__(n_estimators, n_features, min_size, True, verbose)
+
+    def predict(self, x):
+        return self.apply(Bunch(data=x))
 
 
 class ExtraTreesClassifier(ExtraTreesModelBase):
