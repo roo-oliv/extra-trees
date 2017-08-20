@@ -5,7 +5,7 @@ from typing import Union, Callable, Tuple
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
-from sklearn.base import RegressorMixin
+from sklearn.base import RegressorMixin, ClassifierMixin
 from sklearn.tree._tree import issparse
 from sklearn.tree.tree import DOUBLE
 from sklearn.tree.tree import DTYPE
@@ -141,7 +141,7 @@ class ExtraTree:
             """
             return entropy(
                 [
-                    sum(pd.Index(label).get_indexer(labeling[:, 0]) + 1)
+                    sum(pd.Index((label,)).get_indexer(labeling[:, 0]) + 1)
                     / labeling.shape[0]
                     for label in labels
                 ],
@@ -249,16 +249,15 @@ class ExtraTree:
         return np.asarray([self.decision_tree.predict(x) for x in X])
 
 
-class ExtraTreeRegressor(RegressorMixin):
-    """
-    Extremely Randomized Tree Regressor.
-    """
+class ExtraTreeBase:
     def __init__(
             self,
             min_samples_split: int = 2,
-            max_features: int = None):
+            max_features: int = None,
+            classification: bool = False):
         self.min_samples_split = min_samples_split
         self.max_features = max_features
+        self.classification = classification
         self.tree_ = None  # type: ExtraTree
         self.n_classes_ = None  # type: int
         self.classes_ = None  # type: list
@@ -294,7 +293,7 @@ class ExtraTreeRegressor(RegressorMixin):
         # Build tree
         self.tree_ = ExtraTree(
             self.max_features, self.min_samples_split, self.n_classes_,
-            self.n_outputs_)
+            self.n_outputs_, self.classification)
         self.tree_.build(X, y)
 
         if self.n_outputs_ == 1:
@@ -348,3 +347,19 @@ class ExtraTreeRegressor(RegressorMixin):
     def feature_importances_(self):
         check_is_fitted(self, 'tree_')
         return self.tree_.compute_feature_importances()
+
+
+class ExtraTreeRegressor(ExtraTreeBase, RegressorMixin):
+    """
+    Extremely Randomized Tree Regressor.
+    """
+    def __init__(self, min_samples_split: int = 2, max_features: int = None):
+        super().__init__(min_samples_split, max_features)
+
+
+class ExtraTreeClassifier(ExtraTreeBase, ClassifierMixin):
+    """
+    Extremely Randomized Tree Classifier.
+    """
+    def __init__(self, min_samples_split: int = 2, max_features: int = None):
+        super().__init__(min_samples_split, max_features, classification=True)
