@@ -379,7 +379,7 @@ class ExtraTreeRegressor(ExtraTreeBase, RegressorMixin):
     """
     Extremely Randomized Tree Regressor.
     """
-    def __init__(self, min_samples_split: int = 2, max_features: int = None):
+    def __init__(self, min_samples_split: int = 5, max_features: int = None):
         super().__init__(min_samples_split, max_features)
 
 
