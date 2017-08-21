@@ -5,7 +5,7 @@ from typing import Union, Callable, Tuple
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
-from sklearn.base import RegressorMixin, ClassifierMixin
+from sklearn.base import RegressorMixin, ClassifierMixin, BaseEstimator
 from sklearn.tree._tree import issparse
 from sklearn.tree.tree import DOUBLE
 from sklearn.tree.tree import DTYPE
@@ -249,7 +249,7 @@ class ExtraTree:
         return np.asarray([self.decision_tree.predict(x) for x in X])
 
 
-class ExtraTreeBase:
+class ExtraTreeBase(BaseEstimator):
     def __init__(
             self,
             min_samples_split: int = 2,
@@ -263,11 +263,12 @@ class ExtraTreeBase:
         self.classes_ = None  # type: list
         self.n_outputs_ = None  # type: int
         self.n_features_ = None  # type: int
+        self.random_state = None
 
-    def fit(self, X, y):
+    def fit(self, X, y, **kwargs):
         # Determine output settings
         n_samples, self.n_features_ = X.shape
-        if self.max_features is None:
+        if self.max_features == "auto" or not self.max_features:
             self.max_features = n_samples
 
         y = np.atleast_1d(y)

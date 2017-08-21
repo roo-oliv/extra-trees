@@ -1,25 +1,31 @@
-from typing import Union
-
 from sklearn.ensemble.forest import ForestRegressor
+
+from extra_trees.tree.tree import ExtraTreeRegressor
 
 
 class ExtraTreesRegressor(ForestRegressor):
     def __init__(
             self,
-            n_estimators: int = 10,
-            min_samples_split: int = 2,
-            max_features: Union[str, int] = 'dynamic',
+            n_estimators=10,
+            criterion="mse",
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            min_weight_fraction_leaf=0.,
+            max_features="auto",
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.,
+            min_impurity_split=None,
+            bootstrap=True,
+            oob_score=False,
             n_jobs=1,
             random_state=None,
-            verbose=0):
+            verbose=0,
+            warm_start=False):
         super().__init__(
             base_estimator=ExtraTreeRegressor(),
             n_estimators=n_estimators,
-            estimator_params=("criterion", "max_depth", "min_samples_split",
-                              "min_samples_leaf", "min_weight_fraction_leaf",
-                              "max_features", "max_leaf_nodes",
-                              "min_impurity_decrease", "min_impurity_split",
-                              "random_state"),
+            estimator_params=("max_features", "min_samples_split"),
             bootstrap=bootstrap,
             oob_score=oob_score,
             n_jobs=n_jobs,

@@ -20,6 +20,8 @@ def test_extra_tree_regressor():
     print(predictions)
     print(y_test)
 
+    assert len(predictions) == len(y_test)
+
 
 def test_extra_tree_classifier():
     breast_cancer_dataset = datasets.load_breast_cancer()
@@ -36,3 +38,9 @@ def test_extra_tree_classifier():
     print('\n')
     print(predictions)
     print(y_test)
+
+    assert len(predictions) == len(y_test)
+
+    all_classes = np.unique(breast_cancer_dataset.target)
+    predicted_classes = np.unique(predictions)
+    assert all(value in all_classes for value in predicted_classes)
