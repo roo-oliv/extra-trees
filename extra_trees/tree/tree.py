@@ -226,9 +226,16 @@ class ExtraTree:
 
             # Select K attributes to draw splits from
             individual_probability = 1 / (X.shape[1] - sum(constant))
+            if self.max_features == 'auto' or self.max_features is None:
+                if self.classification:
+                    max_features = y.shape[0]
+                else:
+                    max_features = np.sqrt(y.shape[0])
+            else:
+                max_features = self.max_features
             k_choices = np.random.choice(
                 X.shape[1],
-                min(self.max_features, len(constant) - sum(constant)),
+                min(max_features, len(constant) - sum(constant)),
                 replace=False,
                 p=[
                     individual_probability if not constant[i] else 0
@@ -286,8 +293,8 @@ class ExtraTreeBase(BaseEstimator):
     def fit(self, X, y, **kwargs):
         # Determine output settings
         n_samples, self.n_features_ = X.shape
-        if self.max_features == "auto" or not self.max_features:
-            self.max_features = n_samples
+        if self.max_features is None:
+            self.max_features = 'auto'
 
         y = np.atleast_1d(y)
 
