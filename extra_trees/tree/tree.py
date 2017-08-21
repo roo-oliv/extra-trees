@@ -156,10 +156,8 @@ class ExtraTree:
             # then use classification and split entropies with the
             # mutual information to calculate the score
             classes = np.unique(y)
-            l_classes = np.unique(yl)
-            r_classes = np.unique(yr)
-            l_entropy = labeling_entropy(yl, l_classes)  # Should we use
-            r_entropy = labeling_entropy(yr, r_classes)  # `classes` instead?
+            l_entropy = labeling_entropy(yl, classes)
+            r_entropy = labeling_entropy(yr, classes)
             l_probability = yl.shape[0]/y.shape[0]
             r_probability = yr.shape[0]/y.shape[0]
 
