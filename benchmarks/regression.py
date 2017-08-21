@@ -1,5 +1,10 @@
 
-from sklearn.metrics import explained_variance_score, mean_absolute_error, mean_squared_error, mean_squared_log_error, median_absolute_error, r2_score
+from sklearn.metrics import explained_variance_score
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_log_error
+from sklearn.metrics import median_absolute_error
+from sklearn.metrics import r2_score
 from sklearn.tree import DecisionTreeRegressor
 import matplotlib.pyplot as plt
 import numpy as np

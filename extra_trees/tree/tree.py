@@ -60,7 +60,7 @@ class ExtraTree:
                   reach, `False` otherwise
         """
         # Check if are at least `min_samples_split` in the data set
-        if X.shape[1] < self.min_samples_split:
+        if X.shape[0] < self.min_samples_split:
             return True
 
         # Check if there is at least one non-constant attribute in the
