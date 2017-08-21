@@ -20,6 +20,7 @@ class ExtraTree:
         self.max_features = max_features
         self.min_samples_split = min_samples_split
         self.n_classes_ = n_classes_
+        self.classes_ = None  # type: list
         self.n_outputs_ = n_outputs_
         self.classification = classification
         self.decision_tree = ExtraTree.DecisionTree()
@@ -50,7 +51,7 @@ class ExtraTree:
         def assign(self, node: Union['ExtraTree.Node', 'ExtraTree.Leaf']):
             self.node = node
 
-        def predict(self, x):
+        def predict(self, x) -> Union[float, np.ndarray]:
             return self.node.predict(x)
 
     def _stop(self, X: np.ndarray, y: np.ndarray, constant: list):
@@ -139,6 +140,8 @@ class ExtraTree:
             Calculates the entropy of a labeling given the possible
             labels
             """
+            if labels.shape[0] == 0:
+                return 1
             return entropy(
                 [
                     sum(pd.Index((label,)).get_indexer(labeling[:, 0]) + 1)
@@ -194,6 +197,9 @@ class ExtraTree:
         :param y: Array of target values for each sample in X
         :return: self
         """
+        if self.classification:
+            self.classes_ = np.unique(y)
+
         def _build(
                 X: np.ndarray, y: np.ndarray,
                 decision_tree: ExtraTree.DecisionTree):
@@ -204,10 +210,14 @@ class ExtraTree:
 
             if self._stop(X, y, constant):
                 if self.classification:
-                    count = np.unique(y, return_counts=True)
-                    prediction = max(
-                        zip(count[0], count[1]),
-                        key=lambda t: t[1])[0]
+                    unique, counts = np.unique(y, return_counts=True)
+                    occurrences = dict(zip(unique, counts))
+                    for cls in self.classes_:
+                        if not occurrences.get(cls):
+                            occurrences[cls] = 0
+                    prediction = np.asarray([
+                        occurrences[cls] / y.shape[0]
+                        for cls in self.classes_])
                 else:
                     prediction = y.mean()
                 leaf = ExtraTree.Leaf(prediction)
@@ -246,6 +256,14 @@ class ExtraTree:
         return self
 
     def predict(self, X: np.ndarray):
+        if self.classification:
+            return np.asarray([
+                self.classes_[self.decision_tree.predict(x).argmax()]
+                for x in X])
+        else:
+            return np.asarray([self.decision_tree.predict(x) for x in X])
+
+    def predict_proba(self, X: np.ndarray):
         return np.asarray([self.decision_tree.predict(x) for x in X])
 
 
@@ -364,3 +382,25 @@ class ExtraTreeClassifier(ExtraTreeBase, ClassifierMixin):
     """
     def __init__(self, min_samples_split: int = 2, max_features: int = None):
         super().__init__(min_samples_split, max_features, classification=True)
+
+    def predict(self, X: np.ndarray, check_input=True):
+        check_is_fitted(self, 'tree_')
+        X = self._validate_X_predict(X, check_input)
+        proba = self.tree_.predict(X)
+        n_samples = X.shape[0]
+
+        if self.n_outputs_ == 1:
+            return proba
+        else:
+            return proba[:, :, 0]
+
+    def predict_proba(self, X: np.ndarray, check_input=True):
+        check_is_fitted(self, 'tree_')
+        X = self._validate_X_predict(X, check_input)
+        proba = self.tree_.predict_proba(X)
+        n_samples = X.shape[0]
+
+        if self.n_outputs_ == 1:
+            return proba
+        else:
+            return proba[:, :, 0]
