@@ -228,7 +228,7 @@ class ExtraTree:
                 if self.classification:
                     max_features = y.shape[0]
                 else:
-                    max_features = np.sqrt(y.shape[0])
+                    max_features = int(np.sqrt(y.shape[0]))
             else:
                 max_features = self.max_features
             k_choices = np.random.choice(
