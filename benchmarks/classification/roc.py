@@ -65,7 +65,6 @@ for name, classifier in classification_models:
     aucs = []
     mean_fpr = np.linspace(0, 1, 100)
 
-    i = 0
     for train, test in folds:
         probas_ = classifier.fit(X[train], y[train]).predict_proba(X[test])
         # Compute ROC curve and area the curve
@@ -74,8 +73,6 @@ for name, classifier in classification_models:
         tprs[-1][0] = 0.0
         roc_auc = auc(fpr, tpr)
         aucs.append(roc_auc)
-
-        i += 1
 
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
