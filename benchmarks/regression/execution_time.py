@@ -39,14 +39,19 @@ for data_name, data_set in regression_data_sets:
     np.random.shuffle(fx)
 
     for name, model in regression_models:
-        print("model: {}\n=======".format(name) + "=" * len(name))
+        times = []
 
+        print("model: {}\n=======".format(name) + "=" * len(name))
         train = X[fx[0:train_size],:]
         test = X[fx[train_size:],:]
 
-        start = time.time()
-        model.fit(train, y[fx[0:train_size]])
-        model.predict(test)
-        print("score={}".format(model.score(test, y[fx[train_size:]])))
-        end = time.time()
-        print("elapsed time={}\n".format(end - start))
+        for _ in range(10):
+            start = time.time()
+            model.fit(train, y[fx[0:train_size]])
+            model.predict(test)
+            model.score(test, y[fx[train_size:]])
+            end = time.time()
+            times.append(end - start)
+
+        print("time mean={}".format(np.mean(times)))
+        print("time stdev={}\n".format(np.std(times)))
